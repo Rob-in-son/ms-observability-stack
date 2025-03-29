@@ -1,10 +1,14 @@
 from flask import Flask, jsonify, request
 import redis
 import os
+from dotenv import load_dotenv
+
+#Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 
-#connect to redis
+#Connect to redis
 redis_host = os.getenv('REDIS_HOST', 'localhost')
 redis_port = int(os.getenv('REDIS_PORT', '6379'))
 redis_client = redis.StrictRedis(host=redis_host, port=redis_port, decode_responses=True)
