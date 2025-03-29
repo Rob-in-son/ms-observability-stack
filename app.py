@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 import redis
 import os
+import time
 from dotenv import load_dotenv
 
 #Load environment variables from .env file
@@ -13,8 +14,18 @@ redis_host = os.getenv('REDIS_HOST', 'localhost')
 redis_port = int(os.getenv('REDIS_PORT', '6379'))
 redis_client = redis.StrictRedis(host=redis_host, port=redis_port, decode_responses=True)
 
+#Home
+@app.route('/')
+def home():
+    return jsonify({"Message" : "Welcome to my API"})
+
+#Get Time
+@app.route('/time')
+def get_time():
+  return jsonify({'time': time.time()})
+
 #CREATE: Set a key-value pair
-app.route('/cache', methods=['POST'])
+@app.route('/cache', methods=['POST'])
 def create_cache():
     data = request.json
     key = data.get('key')
@@ -26,7 +37,7 @@ def create_cache():
     return jsonify({"message" : f"Key {key} set with value {value}"}), 201
 
 #READ: Get a value by key from Redis
-app.route('/cache/<key>', methods=['GET'])
+@app.route('/cache/<key>', methods=['GET'])
 def get_cache(key):
     value = redis_client.get(key)
 
@@ -36,8 +47,11 @@ def get_cache(key):
     return jsonify({"key" : key , "value" : value})
 
 #DELETE : Remove a key
-app.route('/cache/<key>', methods=['DELETE'])
+@app.route('/cache/<key>', methods=['DELETE'])
 def delete_cache(key):
     if redis_client.delete(key):
         return jsonify({"message" : f"Key {key} deleted"}), 200
     return jsonify({"error" : "Key not found"}), 404
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)

@@ -1,3 +1,20 @@
-venv
-.env
-dump.rdb
+# --- Python Backend ---
+venv                    
+.env                      
+dump.rdb                  
+__pycache__/              
+*.pyc                     
+*.pyo
+*.pyd
+
+# --- React Frontend ---
+react-flask-app/node_modules/  
+react-flask-app/build/         
+react-flask-app/dist/         
+
+# Logs
+react-flask-app/npm-debug.log*
+react-flask-app/yarn-error.log*
+.DS_Store
+
+
