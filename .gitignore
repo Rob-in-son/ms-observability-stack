@@ -18,5 +18,5 @@ frontend/yarn-error.log*
 .DS_Store
 
 # Others
-app.py
+.app.py
 
