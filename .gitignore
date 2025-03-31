@@ -8,13 +8,15 @@ __pycache__/
 *.pyd
 
 # --- React Frontend ---
-react-flask-app/node_modules/  
-react-flask-app/build/         
-react-flask-app/dist/         
+frontend/node_modules/  
+frontend/build/         
+frontend/dist/         
 
 # Logs
-react-flask-app/npm-debug.log*
-react-flask-app/yarn-error.log*
+frontend/npm-debug.log*
+frontend/yarn-error.log*
 .DS_Store
 
+# Others
+app.py
 

@@ -31,11 +31,11 @@ services:
   frontend:
     container_name: react
     build: 
-      context: ./react-flask-app
+      context: ./frontend
     ports: 
       - "3000:80"
     env_file: 
-      - ./react-flask-app/.env
+      - ./frontend/.env
     depends_on:
       - user-service
       - product-service
