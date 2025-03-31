@@ -1,137 +1,259 @@
-import React, { useState, useEffect } from "react";
-import "./App.css";
+import React, { useState, useEffect } from 'react';
+import './App.css';
 
 function App() {
-  const [time, setTime] = useState(null);
-  const [key, setKey] = useState("");
-  const [value, setValue] = useState("");
-  const [cacheData, setCacheData] = useState(null);
-  const [message, setMessage] = useState("");
+  // State for users and products
+  const [users, setUsers] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // State for form inputs
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [productName, setProductName] = useState('');
+  const [productDescription, setProductDescription] = useState('');
+  const [productPrice, setProductPrice] = useState('');
+  
+  // Active tab state
+  const [activeTab, setActiveTab] = useState('users');
 
+  // API URLs 
+ // const USER_API_URL = process.env.REACT_APP_USER_API_URL || 'http://localhost:5001/api/users';
+  const USER_API_URL = process.env.REACT_APP_USER_API_URL || 'http://localhost:5001/users';
+ // const PRODUCT_API_URL = process.env.REACT_APP_PRODUCT_API_URL || 'http://localhost:5002/api/products';
+  const PRODUCT_API_URL = process.env.REACT_APP_PRODUCT_API_URL || 'http://localhost:5002/products';
+  
+  // Fetch users and products on component mount
   useEffect(() => {
-    fetchTime();
-  }, []);
-
-  // Fetch the current time from Flask API
-  const fetchTime = async () => {
-    try {
-      const response = await fetch("/time");
-      const data = await response.json();
-      setTime(new Date(data.time * 1000).toLocaleString());
-    } catch (error) {
-      console.error("Error fetching time:", error);
-    }
-  };
-
-  // Create a key-value pair in Redis
-  const createCache = async () => {
-    if (!key || !value) {
-      setMessage("⚠️ Please enter both key and value.");
-      return;
-    }
-    try {
-      const response = await fetch("/cache", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key, value }),
-      });
-      const data = await response.json();
-      setMessage(data.message);
-      setKey("");
-      setValue("");
-    } catch (error) {
-      setMessage("❌ Error setting cache.");
-    }
-  };
-
-  // Get a value from Redis by key
-  const getCache = async () => {
-    if (!key) {
-      setMessage("⚠️ Please enter a key.");
-      return;
-    }
-    try {
-      const response = await fetch(`/cache/${key}`);
-      if (response.status === 404) {
-        setMessage("⚠️ Key not found.");
-        setCacheData(null);
-      } else {
-        const data = await response.json();
-        setCacheData(data);
-        setMessage("");
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [usersResponse, productsResponse] = await Promise.all([
+          fetch(USER_API_URL),
+          fetch(PRODUCT_API_URL)
+        ]);
+        
+        if (!usersResponse.ok) throw new Error('Failed to fetch users');
+        if (!productsResponse.ok) throw new Error('Failed to fetch products');
+        
+        const usersData = await usersResponse.json();
+        const productsData = await productsResponse.json();
+        
+        setUsers(usersData);
+        setProducts(productsData);
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+        console.error('Error fetching data:', err);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      setMessage("❌ Error fetching cache.");
+    };
+    
+    fetchData();
+  }, [USER_API_URL, PRODUCT_API_URL]);
+
+  // Handle user form submission
+  const handleUserSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(USER_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, email }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to create user');
+      
+      const newUser = await response.json();
+      setUsers([...users, newUser]);
+      setUsername('');
+      setEmail('');
+    } catch (err) {
+      setError(err.message);
+      console.error('Error creating user:', err);
     }
   };
 
-  // Delete a key from Redis
-  const deleteCache = async () => {
-    if (!key) {
-      setMessage("⚠️ Please enter a key.");
-      return;
-    }
+  // Handle product form submission
+  const handleProductSubmit = async (e) => {
+    e.preventDefault();
     try {
-      const response = await fetch(`/cache/${key}`, { method: "DELETE" });
-      const data = await response.json();
-      setMessage(data.message);
-      setCacheData(null);
-      setKey("");
-    } catch (error) {
-      setMessage("❌ Error deleting key.");
+      const response = await fetch(PRODUCT_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          name: productName, 
+          description: productDescription, 
+          price: parseFloat(productPrice) 
+        }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to create product');
+      
+      const newProduct = await response.json();
+      setProducts([...products, newProduct]);
+      setProductName('');
+      setProductDescription('');
+      setProductPrice('');
+    } catch (err) {
+      setError(err.message);
+      console.error('Error creating product:', err);
     }
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Flask + React Integration</h1>
-
-        {/* Time Display */}
-        <h2>⏰ Current Time</h2>
-        <p>{time ? time : "Loading..."}</p>
-
-        {/* Cache Input Fields */}
-        <h2>🔑 Manage Redis Cache</h2>
-        <div className="input-container">
-          <input
-            type="text"
-            placeholder="Enter Key"
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Enter Value"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-          />
+    <div className="app">
+      <header>
+        <h1>Microservices Demo</h1>
+        <div className="tabs">
+          <button 
+            className={activeTab === 'users' ? 'active' : ''} 
+            onClick={() => setActiveTab('users')}
+          >
+            Users
+          </button>
+          <button 
+            className={activeTab === 'products' ? 'active' : ''} 
+            onClick={() => setActiveTab('products')}
+          >
+            Products
+          </button>
         </div>
-
-        {/* Buttons for API Actions */}
-        <div className="button-container">
-          <button onClick={createCache}>Set Cache</button>
-          <button onClick={getCache}>Get Cache</button>
-          <button onClick={deleteCache}>Delete Cache</button>
-        </div>
-
-        {/* Display Fetched Cache Data */}
-        {cacheData && (
-          <div className="result">
-            <h3>📦 Cached Data</h3>
-            <p>
-              <strong>Key:</strong> {cacheData.key} <br />
-              <strong>Value:</strong> {cacheData.value}
-            </p>
-          </div>
-        )}
-
-        {/* Message Display */}
-        {message && <p className="message">{message}</p>}
       </header>
+
+      {error && <div className="error-message">{error}</div>}
+
+      <main>
+        {loading ? (
+          <div className="loading">Loading...</div>
+        ) : (
+          <>
+            {activeTab === 'users' && (
+              <div className="section">
+                <h2>Users</h2>
+                <form onSubmit={handleUserSubmit} className="form">
+                  <div className="form-group">
+                    <label htmlFor="username">Username:</label>
+                    <input
+                      type="text"
+                      id="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="email">Email:</label>
+                    <input
+                      type="email"
+                      id="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button type="submit" className="submit-btn">Add User</button>
+                </form>
+                
+                <div className="list-container">
+                  <h3>User List</h3>
+                  {users.length === 0 ? (
+                    <p>No users found.</p>
+                  ) : (
+                    <ul className="list">
+                      {users.map((user) => (
+                        <li key={user.id} className="list-item">
+                          <div className="list-item-header">
+                            <strong>{user.username}</strong>
+                          </div>
+                          <div className="list-item-content">
+                            <p>Email: {user.email}</p>
+                            <p>Created: {new Date(user.created_at).toLocaleString()}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {activeTab === 'products' && (
+              <div className="section">
+                <h2>Products</h2>
+                <form onSubmit={handleProductSubmit} className="form">
+                  <div className="form-group">
+                    <label htmlFor="productName">Name:</label>
+                    <input
+                      type="text"
+                      id="productName"
+                      value={productName}
+                      onChange={(e) => setProductName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="productDescription">Description:</label>
+                    <textarea
+                      id="productDescription"
+                      value={productDescription}
+                      onChange={(e) => setProductDescription(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="productPrice">Price:</label>
+                    <input
+                      type="number"
+                      id="productPrice"
+                      step="0.01"
+                      min="0"
+                      value={productPrice}
+                      onChange={(e) => setProductPrice(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button type="submit" className="submit-btn">Add Product</button>
+                </form>
+                
+                <div className="list-container">
+                  <h3>Product List</h3>
+                  {products.length === 0 ? (
+                    <p>No products found.</p>
+                  ) : (
+                    <ul className="list">
+                      {products.map((product) => (
+                        <li key={product.id} className="list-item">
+                          <div className="list-item-header">
+                            <strong>{product.name}</strong>
+                            <span className="price">${product.price.toFixed(2)}</span>
+                          </div>
+                          <div className="list-item-content">
+                            <p>{product.description}</p>
+                            <p>Created: {new Date(product.created_at).toLocaleString()}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </main>
+
+      <footer>
+        <p>Microservices Demo &copy; {new Date().getFullYear()}</p>
+      </footer>
     </div>
   );
 }
 
 export default App;
-
