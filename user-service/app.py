@@ -6,6 +6,7 @@ import time
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
+from prometheus_flask_exporter import PrometheusMetrics
 from sqlalchemy.orm import sessionmaker
 import datetime
 import json
@@ -14,6 +15,7 @@ import json
 load_dotenv()
 
 app = Flask(__name__)
+metrics = PrometheusMetrics(app)
 
 # Connect to redis
 redis_host = os.getenv('REDIS_HOST', 'redis')
