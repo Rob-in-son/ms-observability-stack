@@ -6,6 +6,7 @@ import time
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
+from prometheus_client import Gauge
 from prometheus_flask_exporter import PrometheusMetrics
 from sqlalchemy.orm import sessionmaker
 import datetime
@@ -16,6 +17,9 @@ load_dotenv()
 
 app = Flask(__name__)
 metrics = PrometheusMetrics(app)
+
+# Health gauge metric
+health_gauge = Gauge('flask_app_health', 'Health status of Flask app (1=healthy, 0=unhealthy)')
 
 # Connect to redis
 redis_host = os.getenv('REDIS_HOST', 'redis')
@@ -53,6 +57,11 @@ Base.metadata.create_all(bind=engine)
 @app.route('/')
 def home():
     return jsonify({"Message": "Welcome to User Service API"})
+
+@app.route('/health')
+def health():
+    health_gauge.set(1)
+    return "OK", 200
 
 # Get Time
 @app.route('/time')

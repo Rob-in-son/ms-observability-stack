@@ -1,5 +1,5 @@
 services:
-  postgres-expoerter:
+  postgres-exporter:
     container_name: postgres-exporter
     image: prometheuscommunity/postgres-exporter
     ports:
@@ -18,8 +18,6 @@ services:
       - REDIS_ADDR=redis:6379
     networks:
       - app-network
-    depends_on:
-      - redis
     restart: unless-stopped
 
   prometheus:
@@ -39,8 +37,10 @@ services:
     image: grafana/grafana
     ports:
       - "3001:3000"
-    depends_on:
-      - prometheus
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - grafana-storage:/var/lib/grafana
     networks:
       - app-network
     restart: unless-stopped
@@ -48,3 +48,7 @@ services:
 networks:
   app-network:
     external: True
+
+volumes:
+  prometheus_data:
+  grafana-storage: 

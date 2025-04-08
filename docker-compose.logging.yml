@@ -5,9 +5,9 @@ services:
     environment:
       - node.name=elasticsearch
       - discovery.type=single-node
-      - bootstrap.memory-lock=true
+      - bootstrap.memory_lock=true
       - xpack.security.enabled=false
-      - xpack.ecurity.audit.enabled=false
+      - xpack.security.audit.enabled=false
     ulimits:
       memlock:
         soft: -1
@@ -32,14 +32,16 @@ services:
       - logging
     depends_on: 
       - elasticsearch
+    restart: unless-stopped
 
   logstash:
     container_name: logstash
     image: docker.elastic.co/logstash/logstash:8.17.4
     environment: 
-      - 
+      - LS_JAVA_OPTS=-Xms512m -Xmx512m
     volumes:
-      - 
+      - ./logstash/config/logstash.conf:/usr/share/logstash/config/logstash.conf:ro,Z
+      - ./logstash/config/jvm.options:/usr/share/logstash/config/jvm.options:ro,Z
     ports:
       - "5044:5044"
     networks:
@@ -47,6 +49,22 @@ services:
       - logging
     depends_on:
       - elasticsearch
+    restart: unless-stopped
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.17.1
+    container_name: filebeat
+    user: root
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - elasticsearch
+    networks:
+      - app-network
+      - logging
+    restart: unless-stopped
 
 volumes:
   elasticsearch-data:

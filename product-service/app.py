@@ -8,6 +8,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from prometheus_flask_exporter import PrometheusMetrics
+from prometheus_client import Gauge
 import datetime
 import json
 
@@ -16,6 +17,9 @@ load_dotenv()
 
 app = Flask(__name__)
 metrics = PrometheusMetrics(app)
+
+# Health gauge metric
+health_gauge = Gauge('flask_app_health', 'Health status of product app (1=healthy, 0=unhealthy)')
 
 # Connect to redis
 redis_host = os.getenv('REDIS_HOST', 'redis')
@@ -55,6 +59,11 @@ Base.metadata.create_all(bind=engine)
 @app.route('/')
 def home():
     return jsonify({"Message": "Welcome to Product Service API"})
+
+@app.route('/health')
+def health():
+    health_gauge.set(1)
+    return "OK", 200
 
 # Get Time
 @app.route('/time')
